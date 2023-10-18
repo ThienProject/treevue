@@ -1,4 +1,5 @@
 <script setup>
+import { h, nextTick } from 'vue';
 const treeData = ([
   {
     title: 'parent 1',
@@ -31,41 +32,54 @@ const treeData = ([
 ]);
 
 const handleToggleExtend =  (event)=>{
-  console.log(event);
-  event.target.closest().classList.toggle('extend');
+  const treeNode = event.target.closest('.tree-node');
+  // if (!treeNode.classList.contains('extend')) {
+  //   const childElements = treeNode.querySelectorAll('.child');
+  //   childElements.forEach((childElement) => {
+  //     childElement.style.height = 50 + "px";
+  //   });
+  // }else {
+  //   const childElements = treeNode.querySelectorAll('.child');
+  //   childElements.forEach((childElement) => {
+  //     childElement.style.height = 0;
+  //   });
+  // }
+  treeNode.classList.toggle('extend');
+  
+
 }
 
 const getNodeTree = (node, level) => {
   if (!node.children || node.children?.length <= 0) {
-    return `<div class="tree-node ${level == 0 ?'node-root':''}" data-key="${node?.key}"><span class="tree-title">node?.title</span></div>`;
+    return h('div', { class: 'tree-node ' + (level === 0 ? 'node-root' : ''), 'data-key': node?.key }, [
+      h('span', { class: 'tree-title' }, node?.title)
+    ]);
   } else {
-    let children = `<div class="tree-node haschild ${level == 0 ?'node-root':''}" :data-key="${node?.key}">
-                        <span class="btn" @click.native.capture="handleToggleExtend">
-                            +
-                        </span>
-                    <span class="tree-title">${node?.title}</span>`;
+    let children = h('div', { class: 'tree-node haschild ' + (level === 0 ? 'node-root' : ''), 'data-key': node?.key }, [
+      h('span', { class: 'btn' , onClick: handleToggleExtend  }, '+'),
+      h('span', { class: 'tree-title' }, node?.title)
+    ]);
+    
     for (let i = 0; i < node.children.length; i++) {
-      children += `
-                    <div class="child">
-                        <div class="tree-space"></div>
-                        <span class="btn" @click.native.capture="handleToggleExtend">
-                            +
-                        </span>
-                        ${getNodeTree(node.children[i])}
-                    </div>
-             `
+      children.children.push(
+        h('div', { class: 'child' }, [
+          h('div', { class: 'tree-space' }),
+          getNodeTree(node.children[i])
+        ])
+      );
     }
-    children += ` </div>`;
+    
     return children;
   }
-}
+};
 
 </script>
 
 <template>
   <div>
     <div class="tree-root">
-      <div v-for="node in treeData" v-html="getNodeTree(node)" >
+      <div v-for="node in treeData" >
+        <component :is="getNodeTree(node)" />
       </div>
     </div>
   </div>
@@ -86,15 +100,17 @@ const getNodeTree = (node, level) => {
   height: 90%;
   top: 10%;
   left: -2px;
-  width: 2px;
+  width: 0.5px;
   background: #181818;
 }
-.tree-node .child{
-  height :0;
+.tree-node > .child{
+  height: 0;
+  transition: all 0.2s ease-out;
   overflow-y: hidden;
 }
-.tree-node.extend .child{
-  height: 100%;
+.tree-node.extend > .child{
+  transition: all 0.2s ease-in;
+  min-height: 20px;
 }
 .btn {
   cursor: pointer;
